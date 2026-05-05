@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import 'register_screen.dart';
 import 'citizen_dashboard.dart';
 import 'police_dashboard.dart';
+import 'emergency_report_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -194,7 +195,48 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                     ),
                   ).animate().fade(duration: 600.ms, delay: 500.ms).scale(),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFF97316), Color(0xFFDC2626)],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(color: const Color(0xFFF97316).withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 6)),
+                      ],
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const EmergencyReportScreen()),
+                        );
+                      },
+                      icon: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+                      label: Text(
+                        'Emergency Help / Report Accident',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  ).animate().fade(duration: 600.ms, delay: 550.ms).scale(),
+                  const SizedBox(height: 30),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

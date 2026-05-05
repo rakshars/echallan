@@ -105,5 +105,34 @@ class DatabaseService {
       rethrow;
     }
   }
+
+  // Create an emergency accident report (no auth required)
+  Future<void> createEmergencyReport({
+    required String accidentId,
+    required String accidentName,
+    required String witnessContact,
+    required String description,
+    required String locationText,
+    required double locationLat,
+    required double locationLng,
+    required String? imagePath,
+  }) async {
+    try {
+      await _supabase.from('violations').insert({
+        'user_id': 'anonymous',
+        'number_plate': accidentId,
+        'violation_types': ['Accident'],
+        'location_text': locationText,
+        'description':
+            'EMERGENCY: $accidentName\nWitness Contact: $witnessContact\n$description',
+        'image_path': imagePath,
+        'video_path': null,
+        'status': 'emergency',
+      });
+    } catch (e) {
+      print('Error creating emergency report: $e');
+      rethrow;
+    }
+  }
 }
 
