@@ -106,6 +106,21 @@ class DatabaseService {
     }
   }
 
+  // Get all emergency reports
+  Future<List<Map<String, dynamic>>> getEmergencyReports() async {
+    try {
+      final response = await _supabase
+          .from('violations')
+          .select()
+          .eq('status', 'emergency')
+          .order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('Error fetching emergency reports: $e');
+      rethrow;
+    }
+  }
+
   // Create an emergency accident report (no auth required)
   Future<void> createEmergencyReport({
     required String accidentId,
@@ -119,7 +134,7 @@ class DatabaseService {
   }) async {
     try {
       await _supabase.from('violations').insert({
-        'user_id': 'anonymous',
+        'user_id': '00000000-0000-0000-0000-000000000000',
         'number_plate': accidentId,
         'violation_types': ['Accident'],
         'location_text': locationText,
@@ -131,6 +146,101 @@ class DatabaseService {
       });
     } catch (e) {
       print('Error creating emergency report: $e');
+      rethrow;
+    }
+  }
+
+  // ========== Corruption Complaints ==========
+
+  // Upload a supporting document for corruption complaint
+  Future<String?> uploadCorruptionDocument(File file, String userId, String fileName) async {
+    try {
+      final String fullPath = 'corruption/$userId/$fileName';
+      await _supabase.storage.from('violation_media').upload(
+            fullPath,
+            file,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+          );
+      return _supabase.storage.from('violation_media').getPublicUrl(fullPath);
+    } catch (e) {
+      print('Error uploading corruption document: $e');
+      return null;
+    }
+  }
+
+  // Create a new corruption complaint
+  Future<void> createCorruptionComplaint({
+    required String userId,
+    required String complainantName,
+    required String complainantAddress,
+    required String complainantPhone,
+    required String publicServantName,
+    required String publicServantAddress,
+    required String complaintFacts,
+    required String grievanceNature,
+    String? witnessDetails,
+    String? documentDescription,
+    String? documentPath,
+    String? documentSource,
+    required bool previousComplaint,
+    String? previousComplaintDetails,
+    String? remarks,
+    required String parentName,
+    required int age,
+    required String profession,
+    required String residentialAddress,
+    required String taluk,
+    required String district,
+    String? presentTaluk,
+    String? presentDistrict,
+    required String place,
+  }) async {
+    try {
+      await _supabase.from('corruption_complaints').insert({
+        'user_id': userId,
+        'complainant_name': complainantName,
+        'complainant_address': complainantAddress,
+        'complainant_phone': complainantPhone,
+        'public_servant_name': publicServantName,
+        'public_servant_address': publicServantAddress,
+        'complaint_facts': complaintFacts,
+        'grievance_nature': grievanceNature,
+        'witness_details': witnessDetails,
+        'document_description': documentDescription,
+        'document_path': documentPath,
+        'document_source': documentSource,
+        'previous_complaint': previousComplaint,
+        'previous_complaint_details': previousComplaintDetails,
+        'remarks': remarks,
+        'parent_name': parentName,
+        'age': age,
+        'profession': profession,
+        'residential_address': residentialAddress,
+        'taluk': taluk,
+        'district': district,
+        'present_taluk': presentTaluk,
+        'present_district': presentDistrict,
+        'place': place,
+        'complaint_date': DateTime.now().toIso8601String().split('T')[0],
+        'status': 'pending',
+      });
+    } catch (e) {
+      print('Error creating corruption complaint: $e');
+      rethrow;
+    }
+  }
+
+  // Get corruption complaints for a specific user
+  Future<List<Map<String, dynamic>>> getUserCorruptionComplaints(String userId) async {
+    try {
+      final response = await _supabase
+          .from('corruption_complaints')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('Error fetching user corruption complaints: $e');
       rethrow;
     }
   }

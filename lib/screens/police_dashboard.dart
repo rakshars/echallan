@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
 import 'login_screen.dart';
+import 'emergency_reports_list_screen.dart';
 
 class PoliceDashboard extends StatefulWidget {
   const PoliceDashboard({super.key});
@@ -135,7 +136,12 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
                         ),
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const EmergencyReportsListScreen()),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -428,6 +434,21 @@ class _ViolationCardState extends State<_ViolationCard> {
                     ])),
                   ],
                 ),
+                if ((widget.report['description'] ?? '').toString().isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: const Color(0xFFFFF7ED), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.description, size: 16, color: Color(0xFFF59E0B))),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('Description', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: const Color(0xFF94A3B8).withOpacity(0.8))),
+                        const SizedBox(height: 2),
+                        Text(widget.report['description'].toString(), style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF334155), fontWeight: FontWeight.w500)),
+                      ])),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 20),
                 
                 // Evidence Accordion
