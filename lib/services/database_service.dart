@@ -244,5 +244,34 @@ class DatabaseService {
       rethrow;
     }
   }
+
+  // Get all corruption complaints (for police)
+  Future<List<Map<String, dynamic>>> getAllCorruptionComplaints() async {
+    try {
+      final response = await _supabase
+          .from('corruption_complaints')
+          .select()
+          .order('created_at', ascending: false);
+      final list = List<Map<String, dynamic>>.from(response);
+      print('corruption_complaints fetched: ${list.length} rows');
+      return list;
+    } catch (e) {
+      print('Error fetching all corruption complaints: $e');
+      rethrow;
+    }
+  }
+
+  // Update corruption complaint status
+  Future<void> updateCorruptionComplaintStatus(String id, String status) async {
+    try {
+      await _supabase
+          .from('corruption_complaints')
+          .update({'status': status})
+          .eq('id', id);
+    } catch (e) {
+      print('Error updating corruption complaint status: $e');
+      rethrow;
+    }
+  }
 }
 
