@@ -193,8 +193,115 @@ class _ReportViolationScreenState extends State<ReportViolationScreen> {
         videoPath: uploadedVideoPath,
       );
 
+      // Notify vehicle owner if registered
+      Map<String, dynamic>? owner;
+      try {
+        owner = await _dbService.notifyVehicleOwnerIfRegistered(
+          numberPlate: _numberPlateController.text.trim(),
+          violationTypes: _selectedViolations,
+          location: _currentAddress ?? 'Unknown Location',
+          description: _descriptionController.text.trim(),
+        );
+      } catch (_) {
+        // Notification is non-critical; don't block the report
+      }
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Challan reported successfully!')));
+        if (owner != null) {
+          // Show notification success dialog
+          await showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD1FAE5),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.notifications_active, color: Color(0xFF059669), size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text('Owner Notified!', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18)),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'The vehicle owner has been notified about this violation.',
+                    style: GoogleFonts.inter(color: const Color(0xFF4B5563)),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.person, size: 16, color: Color(0xFF6B7280)),
+                            const SizedBox(width: 8),
+                            Text(owner['owner_name'] ?? '', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: const Color(0xFF1F2937))),
+                          ],
+                        ),
+                        if (owner['owner_email'] != null) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              const Icon(Icons.email, size: 16, color: Color(0xFF6B7280)),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(owner['owner_email'], style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280)))),
+                            ],
+                          ),
+                        ],
+                        if (owner['owner_phone'] != null) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              const Icon(Icons.phone, size: 16, color: Color(0xFF6B7280)),
+                              const SizedBox(width: 8),
+                              Text(owner['owner_phone'], style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280))),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF3B82F6),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text('Done', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Challan reported successfully!'),
+              backgroundColor: const Color(0xFF10B981),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
         Navigator.pop(context);
       }
     } catch (e) {

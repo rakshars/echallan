@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/database_service.dart';
 import 'login_screen.dart';
 import 'emergency_reports_list_screen.dart';
+import 'vehicle_registry_screen.dart';
 
 class PoliceDashboard extends StatefulWidget {
   const PoliceDashboard({super.key});
@@ -61,16 +62,29 @@ class _PoliceDashboardState extends State<PoliceDashboard> {
           ],
         ),
         actions: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text('Active Officer', style: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 10, fontWeight: FontWeight.w600)),
-                  Text('On Duty', style: GoogleFonts.poppins(color: const Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 13)),
-                ],
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0, top: 10, bottom: 10),
+            child: InkWell(
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const VehicleRegistryScreen()));
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.directions_car, color: Color(0xFF3B82F6), size: 14),
+                      const SizedBox(width: 4),
+                      Text('Registry', style: GoogleFonts.poppins(color: const Color(0xFF3B82F6), fontSize: 11, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/auth_service.dart';
+import '../services/database_service.dart';
 import 'citizen_dashboard.dart';
 import 'police_dashboard.dart';
 
@@ -23,6 +24,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
+  final _dbService = DatabaseService();
 
   @override
   void dispose() {
@@ -49,6 +51,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
           final user = response.user;
           final role = user?.userMetadata?['role'] ?? _selectedRole;
+
+          // Create user profile for leaderboard
+          if (user != null) {
+            _dbService.upsertUserProfile(
+              userId: user.id,
+              fullName: _nameController.text.trim(),
+              role: _selectedRole,
+            );
+          }
 
           if (role == 'Police Officer') {
             Navigator.pushAndRemoveUntil(

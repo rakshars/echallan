@@ -6,6 +6,7 @@ import '../services/database_service.dart';
 import 'login_screen.dart';
 import 'report_violation_screen.dart';
 import 'corruption_complaint_screen.dart';
+import 'leaderboard_screen.dart';
 
 class CitizenDashboard extends StatefulWidget {
   const CitizenDashboard({super.key});
@@ -166,6 +167,19 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   subtitle: 'File a Lokayukta complaint against a public servant',
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => const CorruptionComplaintScreen()));
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // 3. Leaderboard
+                _buildActionCard(
+                  icon: Icons.emoji_events,
+                  iconBgColor: const Color(0xFFFEF3C7),
+                  iconColor: const Color(0xFFD97706),
+                  title: 'Leaderboard',
+                  subtitle: 'See top citizen reporters and your rank',
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const LeaderboardScreen()));
                   },
                 ),
 

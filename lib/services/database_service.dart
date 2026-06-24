@@ -244,5 +244,199 @@ class DatabaseService {
       rethrow;
     }
   }
+
+  // ========== Vehicle Registry ==========
+
+  // Register a vehicle with owner contact info
+  Future<void> registerVehicle({
+    required String numberPlate,
+    required String ownerName,
+    String? ownerEmail,
+    String? ownerPhone,
+  }) async {
+    try {
+      await _supabase.from('vehicle_registry').upsert({
+        'number_plate': numberPlate.toUpperCase().replaceAll(RegExp(r'[\s-]'), ''),
+        'owner_name': ownerName,
+        'owner_email': ownerEmail,
+        'owner_phone': ownerPhone,
+      }, onConflict: 'number_plate');
+    } catch (e) {
+      print('Error registering vehicle: $e');
+      rethrow;
+    }
+  }
+
+  // Look up a vehicle owner by number plate
+  Future<Map<String, dynamic>?> getVehicleOwner(String numberPlate) async {
+    try {
+      final normalized = numberPlate.toUpperCase().replaceAll(RegExp(r'[\s-]'), '');
+      final response = await _supabase
+          .from('vehicle_registry')
+          .select()
+          .eq('number_plate', normalized)
+          .maybeSingle();
+      return response;
+    } catch (e) {
+      print('Error looking up vehicle owner: $e');
+      return null;
+    }
+  }
+
+  // Get all registered vehicles
+  Future<List<Map<String, dynamic>>> getAllRegisteredVehicles() async {
+    try {
+      final response = await _supabase
+          .from('vehicle_registry')
+          .select()
+          .order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('Error fetching registered vehicles: $e');
+      rethrow;
+    }
+  }
+
+  // Delete a vehicle registration
+  Future<void> deleteRegisteredVehicle(String id) async {
+    try {
+      await _supabase.from('vehicle_registry').delete().eq('id', id);
+    } catch (e) {
+      print('Error deleting vehicle registration: $e');
+      rethrow;
+    }
+  }
+
+  // ========== Violation Notifications ==========
+
+  // Create a notification record when a vehicle owner is notified
+  Future<void> createViolationNotification({
+    required String numberPlate,
+    String? ownerEmail,
+    String? ownerPhone,
+    required String notificationSummary,
+  }) async {
+    try {
+      await _supabase.from('violation_notifications').insert({
+        'number_plate': numberPlate,
+        'owner_email': ownerEmail,
+        'owner_phone': ownerPhone,
+        'notification_summary': notificationSummary,
+        'status': 'sent',
+      });
+    } catch (e) {
+      print('Error creating notification: $e');
+      rethrow;
+    }
+  }
+
+  /// Check the vehicle registry and notify the owner if registered.
+  /// Returns the owner info map if found, null otherwise.
+  Future<Map<String, dynamic>?> notifyVehicleOwnerIfRegistered({
+    required String numberPlate,
+    required List<String> violationTypes,
+    required String location,
+    String? description,
+  }) async {
+    final owner = await getVehicleOwner(numberPlate);
+    if (owner == null) return null;
+
+    final summary = 'Violation Report Against ${numberPlate.toUpperCase()}\n'
+        '━━━━━━━━━━━━━━━━━━━━━━━\n'
+        'Violation(s): ${violationTypes.join(", ")}\n'
+        'Location: $location\n'
+        '${description != null && description.isNotEmpty ? "Description: $description\n" : ""}'
+        'Date: ${DateTime.now().toLocal().toString().split('.')[0]}\n'
+        '━━━━━━━━━━━━━━━━━━━━━━━\n'
+        'This is an automated notification from CitiWatch.';
+
+    await createViolationNotification(
+      numberPlate: numberPlate,
+      ownerEmail: owner['owner_email'],
+      ownerPhone: owner['owner_phone'],
+      notificationSummary: summary,
+    );
+
+    return owner;
+  }
+
+  // ========== User Profiles (for Leaderboard) ==========
+
+  // Insert or update a user profile (called during registration)
+  Future<void> upsertUserProfile({
+    required String userId,
+    required String fullName,
+    required String role,
+  }) async {
+    try {
+      await _supabase.from('user_profiles').upsert({
+        'id': userId,
+        'full_name': fullName,
+        'role': role,
+      }, onConflict: 'id');
+    } catch (e) {
+      print('Error upserting user profile: $e');
+      // Don't rethrow — profile creation is secondary to registration
+    }
+  }
+
+  // ========== Leaderboard ==========
+
+  /// Fetch leaderboard data: each citizen's total, approved, and rejected report counts.
+  /// Returns a list sorted by total count descending.
+  Future<List<Map<String, dynamic>>> getLeaderboard() async {
+    try {
+      // Get all non-emergency violations
+      final violations = await _supabase
+          .from('violations')
+          .select('user_id, status')
+          .neq('status', 'emergency');
+
+      // Get all user profiles
+      final profiles = await _supabase
+          .from('user_profiles')
+          .select()
+          .eq('role', 'Citizen');
+
+      // Build a map: userId → { total, approved, rejected }
+      final Map<String, Map<String, int>> counts = {};
+      for (final v in violations) {
+        final uid = v['user_id'] as String;
+        if (uid == '00000000-0000-0000-0000-000000000000') continue; // skip anonymous
+        counts.putIfAbsent(uid, () => {'total': 0, 'approved': 0, 'rejected': 0});
+        counts[uid]!['total'] = (counts[uid]!['total'] ?? 0) + 1;
+        if (v['status'] == 'approved') {
+          counts[uid]!['approved'] = (counts[uid]!['approved'] ?? 0) + 1;
+        } else if (v['status'] == 'rejected') {
+          counts[uid]!['rejected'] = (counts[uid]!['rejected'] ?? 0) + 1;
+        }
+      }
+
+      // Build profile lookup
+      final Map<String, String> profileNames = {};
+      for (final p in profiles) {
+        profileNames[p['id'] as String] = p['full_name'] as String;
+      }
+
+      // Merge into a leaderboard list
+      final leaderboard = counts.entries.map((e) {
+        return {
+          'user_id': e.key,
+          'full_name': profileNames[e.key] ?? 'Unknown Citizen',
+          'total': e.value['total'] ?? 0,
+          'approved': e.value['approved'] ?? 0,
+          'rejected': e.value['rejected'] ?? 0,
+        };
+      }).toList();
+
+      // Sort by total descending
+      leaderboard.sort((a, b) => (b['total'] as int).compareTo(a['total'] as int));
+
+      return leaderboard;
+    } catch (e) {
+      print('Error fetching leaderboard: $e');
+      rethrow;
+    }
+  }
 }
 
