@@ -201,6 +201,7 @@ class _ReportViolationScreenState extends State<ReportViolationScreen> {
           violationTypes: _selectedViolations,
           location: _currentAddress ?? 'Unknown Location',
           description: _descriptionController.text.trim(),
+          imagePath: uploadedImagePath,
         );
       } catch (_) {
         // Notification is non-critical; don't block the report
@@ -252,26 +253,26 @@ class _ReportViolationScreenState extends State<ReportViolationScreen> {
                           children: [
                             const Icon(Icons.person, size: 16, color: Color(0xFF6B7280)),
                             const SizedBox(width: 8),
-                            Text(owner['owner_name'] ?? '', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: const Color(0xFF1F2937))),
+                            Text(owner!['owner_name'] ?? '', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: const Color(0xFF1F2937))),
                           ],
                         ),
-                        if (owner['owner_email'] != null) ...[
+                        if (owner!['owner_email'] != null) ...[
                           const SizedBox(height: 6),
                           Row(
                             children: [
                               const Icon(Icons.email, size: 16, color: Color(0xFF6B7280)),
                               const SizedBox(width: 8),
-                              Expanded(child: Text(owner['owner_email'], style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280)))),
+                              Expanded(child: Text(owner!['owner_email'], style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280)))),
                             ],
                           ),
                         ],
-                        if (owner['owner_phone'] != null) ...[
+                        if (owner!['owner_phone'] != null) ...[
                           const SizedBox(height: 6),
                           Row(
                             children: [
                               const Icon(Icons.phone, size: 16, color: Color(0xFF6B7280)),
                               const SizedBox(width: 8),
-                              Text(owner['owner_phone'], style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280))),
+                              Text(owner!['owner_phone'], style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280))),
                             ],
                           ),
                         ],

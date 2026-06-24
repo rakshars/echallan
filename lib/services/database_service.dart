@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/email_service.dart';
 
 class DatabaseService {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -366,6 +367,7 @@ class DatabaseService {
     required List<String> violationTypes,
     required String location,
     String? description,
+    String? imagePath,
   }) async {
     final owner = await getVehicleOwner(numberPlate);
     if (owner == null) return null;
@@ -376,6 +378,7 @@ class DatabaseService {
         'Location: $location\n'
         '${description != null && description.isNotEmpty ? "Description: $description\n" : ""}'
         'Date: ${DateTime.now().toLocal().toString().split('.')[0]}\n'
+        '${imagePath != null ? "Evidence Photo: $imagePath\n" : ""}'
         '━━━━━━━━━━━━━━━━━━━━━━━\n'
         'This is an automated notification from CitiWatch.';
 
@@ -385,6 +388,17 @@ class DatabaseService {
       ownerPhone: owner['owner_phone'],
       notificationSummary: summary,
     );
+
+    if (owner['owner_email'] != null && owner['owner_email'].toString().isNotEmpty) {
+      await EmailService.sendChallanEmail(
+        recipientEmail: owner['owner_email'],
+        numberPlate: numberPlate,
+        violationTypes: violationTypes,
+        location: location,
+        description: description,
+        imagePath: imagePath,
+      );
+    }
 
     return owner;
   }
@@ -421,11 +435,10 @@ class DatabaseService {
           .select('user_id, status')
           .neq('status', 'emergency');
 
-      // Get all user profiles
+      // Get all user profiles (removing role filter in case of case-sensitivity issues)
       final profiles = await _supabase
           .from('user_profiles')
-          .select()
-          .eq('role', 'Citizen');
+          .select();
 
       // Build a map: userId → { total, approved, rejected }
       final Map<String, Map<String, int>> counts = {};
@@ -448,15 +461,42 @@ class DatabaseService {
       }
 
       // Merge into a leaderboard list
-      final leaderboard = counts.entries.map((e) {
-        return {
-          'user_id': e.key,
-          'full_name': profileNames[e.key] ?? 'Unknown Citizen',
-          'total': e.value['total'] ?? 0,
-          'approved': e.value['approved'] ?? 0,
-          'rejected': e.value['rejected'] ?? 0,
-        };
-      }).toList();
+      final List<Map<String, dynamic>> leaderboard = [];
+      final Set<String> processedUids = {};
+
+      // 1. Add everyone from user_profiles
+      for (final p in profiles) {
+        final uid = p['id'] as String;
+        final name = p['full_name'] as String;
+        final role = p['role'] as String?;
+        
+        // Optionally skip police officers from the citizen leaderboard if role is marked
+        if (role != null && role.toLowerCase().contains('police')) continue;
+
+        final userCounts = counts[uid] ?? {'total': 0, 'approved': 0, 'rejected': 0};
+        
+        leaderboard.add({
+          'user_id': uid,
+          'full_name': name,
+          'total': userCounts['total'] ?? 0,
+          'approved': userCounts['approved'] ?? 0,
+          'rejected': userCounts['rejected'] ?? 0,
+        });
+        processedUids.add(uid);
+      }
+
+      // 2. Add anyone who has violations but NO user_profile
+      for (final entry in counts.entries) {
+        if (!processedUids.contains(entry.key)) {
+          leaderboard.add({
+            'user_id': entry.key,
+            'full_name': 'Unknown Citizen',
+            'total': entry.value['total'] ?? 0,
+            'approved': entry.value['approved'] ?? 0,
+            'rejected': entry.value['rejected'] ?? 0,
+          });
+        }
+      }
 
       // Sort by total descending
       leaderboard.sort((a, b) => (b['total'] as int).compareTo(a['total'] as int));

@@ -152,8 +152,9 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   iconColor: const Color(0xFF3B82F6),
                   title: 'Report Traffic Violation',
                   subtitle: 'Report overspeeding, parking issues, etc.',
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportViolationScreen()));
+                  onTap: () async {
+                    await Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportViolationScreen()));
+                    if (mounted) setState(() {});
                   },
                 ),
                 const SizedBox(height: 12),
@@ -165,8 +166,9 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   iconColor: const Color(0xFF7C3AED),
                   title: 'Report Corruption',
                   subtitle: 'File a Lokayukta complaint against a public servant',
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const CorruptionComplaintScreen()));
+                  onTap: () async {
+                    await Navigator.push(context, MaterialPageRoute(builder: (context) => const CorruptionComplaintScreen()));
+                    if (mounted) setState(() {});
                   },
                 ),
                 const SizedBox(height: 12),

@@ -18,7 +18,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isPasswordVisible = false;
   bool _isLoading = false;
   String _selectedRole = 'Citizen';
-  final List<String> _roles = ['Citizen', 'Police Officer', 'Service Provider'];
+  final List<String> _roles = ['Citizen', 'Police Officer'];
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
